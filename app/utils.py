@@ -1,0 +1,24 @@
+DIMENSIONS = "400x300"
+WIDTH = 400
+HEIGHT = 300
+TITLE = "VICS"
+FILENAME = "../recorded.wav"
+DURATION = 4  # seconds
+SAMPLE_RATE = 16000
+
+close_icon = "assets/title_bar/close.png"
+maximize_icon = "assets/title_bar/stop.png"
+minimize_icon = "assets/title_bar/diamond.png"
+white_circle = "assets/home_screen/circle_white.png"
+
+light_sun = "assets/settings_screen/light.png"
+dark_sun = "assets/settings_screen/dark.png"
+
+idle_color = "#8a8584"
+active_color = "#de2c1f"
+hover_color = "#2c198c"
+dark_theme = "#2B2B2B"
+light_theme = "#f0f0f0"
+
+dark_hover = "#1c1c1c"
+light_hover = "#aba7a7"
