@@ -1,11 +1,5 @@
-import asyncio
 import threading
-import pystray
 import customtkinter as ctk
-from numpy.ma.core import ones_like
-from pystray import MenuItem as item
-
-import time
 from PIL import Image
 from pynput import mouse, keyboard
 
@@ -82,28 +76,11 @@ class VICS(ctk.CTk):
                     self.withdraw()
                     self.focus_in = False
 
-        def show_app():
-            if not self.focus_in:
-                self.deiconify()
 
-        cmb = [{keyboard.Key.shift, keyboard.Key.f1}]
+        self.cmb = utils.keyboard_shortcut
+        self.current = set()
 
-        current = set()
-
-        def on_press(key):
-            if any([key in z for z in cmb]):
-                current.add(key)
-                if any(all(k in current for k in z) for z in cmb):
-                    show_app()
-
-        def on_release(key):
-            if any([key in z for z in cmb]):
-                current.remove(key)
-        def keyboard_listener():
-            with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
-                listener.join()
-
-        threading.Thread(target=keyboard_listener, daemon=True).start()
+        threading.Thread(target=self.keyboard_listener, daemon=True).start()
         listener = mouse.Listener(on_click=on_click)
         listener.start()
 
@@ -124,7 +101,6 @@ class VICS(ctk.CTk):
             self.custom_title_bar.configure(fg_color=utils.light_theme)
 
     def show_instance(self, frame_to_show):
-        # Hide all instances
         for widget in self.content_frame.winfo_children():
             if isinstance(widget, ctk.CTkFrame):
                 widget.pack_forget()
@@ -139,6 +115,24 @@ class VICS(ctk.CTk):
         y = int((screen_height / 2) - (height / 2))
 
         self.geometry(f"{width}x{height}+{x}+{y}")
+
+    def on_press(self, key):
+        if any([key in z for z in self.cmb]):
+            self.current.add(key)
+            if any(all(k in self.current for k in z) for z in self.cmb):
+                self.show_app()
+
+    def on_release(self, key):
+        if any([key in z for z in self.cmb]):
+            self.current.remove(key)
+
+    def keyboard_listener(self):
+        with keyboard.Listener(on_press=self.on_press, on_release=self.on_release) as listener:
+            listener.join()
+
+    def show_app(self):
+        if not self.focus_in:
+            self.deiconify()
 
 
 

@@ -1,9 +1,14 @@
 import customtkinter as ctk
 import sounddevice as sd
 from scipy.io.wavfile import write
+import wavio as wv
 from PIL import Image
 import threading
 from app import utils
+
+import io
+from scipy.io.wavfile import write
+import speech_recognition
 
 
 class RecordButton(ctk.CTkFrame):
@@ -38,15 +43,19 @@ class RecordButton(ctk.CTkFrame):
 
         def on_hover(event):
             if self.recording:
-                return
-            self.white_circle_label.configure(fg_color=utils.hover_color)
-            self.record_btn.configure(fg_color=utils.hover_color)
+                self.white_circle_label.configure(fg_color=utils.blood_red)
+                self.record_btn.configure(fg_color=utils.blood_red)
+            else:
+                self.white_circle_label.configure(fg_color=utils.hover_color)
+                self.record_btn.configure(fg_color=utils.hover_color)
 
         def on_exit(event):
             if self.recording:
-                return
-            self.white_circle_label.configure(fg_color=utils.idle_color)
-            self.record_btn.configure(fg_color=utils.idle_color)
+                self.white_circle_label.configure(fg_color=utils.active_color)
+                self.record_btn.configure(fg_color=utils.active_color)
+            else:
+                self.white_circle_label.configure(fg_color=utils.idle_color)
+                self.record_btn.configure(fg_color=utils.idle_color)
 
 
         self.white_circle_label.bind("<Enter>", on_hover)
@@ -58,39 +67,56 @@ class RecordButton(ctk.CTkFrame):
         self.record_btn.bind("<Leave>", on_exit)
         self.record_btn.bind("<Button-1>", self.start_recording)
 
-
+    def stop_recording(self):
+        def stop_recording():
+            self.recording = False
+            print("ended")
+        if self.recording:
+            self.smooth_color_transition(self.record_btn, utils.active_color, utils.idle_color)
+            self.smooth_color_transition(self.white_circle_label, utils.active_color, utils.idle_color)
+            self.after(100, stop_recording)
 
     def start_recording(self, event):
         if self.recording:
-            return
+            self.stop_recording()
+        else:
+            self.recording = True
 
-        self.recording = True
+            self.record_btn.configure(fg_color=utils.active_color)
+            self.white_circle_label.configure(fg_color=utils.active_color)
 
-        self.record_btn.configure(fg_color=utils.active_color)
-        self.white_circle_label.configure(fg_color=utils.active_color)
+            self.smooth_color_transition(self.record_btn, utils.hover_color, utils.active_color)
+            self.smooth_color_transition(self.white_circle_label, utils.hover_color, utils.active_color)
 
-        self.smooth_color_transition(self.record_btn, utils.hover_color, utils.active_color)
-        self.smooth_color_transition(self.white_circle_label, utils.hover_color, utils.active_color)
+            self.i = 0
+            thread = threading.Thread(target=self.record_audio, args=[self.i])
+            thread.start()
 
 
-        thread = threading.Thread(target=self.record_audio)
-        thread.start()
+    def record_audio(self, i):
 
-    def record_audio(self):
-        # Record and save audio
-        audio = sd.rec(
-            int(utils.DURATION * utils.SAMPLE_RATE),
-            samplerate=utils.SAMPLE_RATE,
-            channels=1,
-            dtype='int16'
-        )
-        sd.wait()
-        write(utils.FILENAME, utils.SAMPLE_RATE, audio)
+        while self.recording:
+            print("starting new stream")
+            audio = sd.rec(
+                int(utils.DURATION * utils.FREQUENCY),
+                samplerate=utils.FREQUENCY,
+                channels=2,
+                dtype='int16'
+            )
+            sd.wait()
+            self.temp_callback(audio)
+            i += 1
 
-        # Reset button UI
-        self.smooth_color_transition(self.record_btn, utils.active_color, utils.idle_color)
-        self.smooth_color_transition(self.white_circle_label, utils.active_color, utils.idle_color)
-        self.recording = False
+
+    def temp_callback(self, audio):
+        print("inside")
+        # MAIN CALLBACK FOR TEXT: this function here
+        # will call and give the recorded audio sample to the machine learning model for translation
+        # look at utils.DURATION for the duration of each interval
+
+
+
+
 
     def smooth_color_transition(self, widget, start_color, end_color, steps=20, delay=20):
         """Smoothly transition the color of the widget from start_color to end_color."""
