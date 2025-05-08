@@ -1,4 +1,5 @@
 from .RecordButton import RecordButton
-#from .HomeView import HomeView
+from .HomeView import HomeView
+from .ThemeSwitchButton import ThemeSwitch
 
-__all__ = ["RecordButton", "HomeView"]
+__all__ = ["RecordButton", "HomeView", "ThemeSwitch"]

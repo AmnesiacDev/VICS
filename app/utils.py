@@ -5,7 +5,7 @@ WIDTH = 400
 HEIGHT = 300
 TITLE = "VICS"
 FILENAME = "assets/recorded.wav"
-DURATION = 4  # seconds
+DURATION = 300
 SAMPLE_RATE = 16000
 FREQUENCY = 44100
 
@@ -28,3 +28,14 @@ blood_red = "#880808"
 
 dark_hover = "#1c1c1c"
 light_hover = "#aba7a7"
+
+
+def center_window(self, width, height):
+    screen_width = self.winfo_screenwidth()
+    screen_height = self.winfo_screenheight()
+
+    x = int((screen_width / 2) - (width / 2))
+    y = int((screen_height / 2) - (height / 2))
+
+    self.geometry(f"{width}x{height}+{x}+{y}")
+

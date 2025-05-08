@@ -1,26 +1,21 @@
+import threading
 import customtkinter as ctk
 import sounddevice as sd
-from scipy.io.wavfile import write
-import wavio as wv
 from PIL import Image
-import threading
 from app import utils
-
-import io
-from scipy.io.wavfile import write
-import speech_recognition
-
 
 class RecordButton(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
+        print("in record")
         self.recording = None
 
         record_btn_x = 140
-        record_btn_y = 50
+        record_btn_y = 80
+
 
         self.record_btn = ctk.CTkButton(
-            self,
+            self.master,
             text="",
             hover=False,
             corner_radius=60,
@@ -38,8 +33,10 @@ class RecordButton(ctk.CTkFrame):
 
         self.ctk_image = ctk.CTkImage(self.white_circle_image,size=(80, 80))
 
-        self.white_circle_label = ctk.CTkLabel(self, fg_color=utils.idle_color, bg_color="transparent", image=self.ctk_image, text="")
+        self.white_circle_label = ctk.CTkLabel(self.master, fg_color=utils.idle_color, bg_color="transparent", image=self.ctk_image, text="")
         self.white_circle_label.place(x=record_btn_x+20, y=record_btn_y+20)
+
+
 
         def on_hover(event):
             if self.recording:
@@ -88,12 +85,11 @@ class RecordButton(ctk.CTkFrame):
             self.smooth_color_transition(self.record_btn, utils.hover_color, utils.active_color)
             self.smooth_color_transition(self.white_circle_label, utils.hover_color, utils.active_color)
 
-            self.i = 0
-            thread = threading.Thread(target=self.record_audio, args=[self.i])
-            thread.start()
+            threading.Thread(target=self.record_audio).start()
 
 
-    def record_audio(self, i):
+
+    def record_audio(self):
 
         while self.recording:
             print("starting new stream")
@@ -105,7 +101,6 @@ class RecordButton(ctk.CTkFrame):
             )
             sd.wait()
             self.temp_callback(audio)
-            i += 1
 
 
     def temp_callback(self, audio):
@@ -121,8 +116,18 @@ class RecordButton(ctk.CTkFrame):
     def smooth_color_transition(self, widget, start_color, end_color, steps=20, delay=20):
         """Smoothly transition the color of the widget from start_color to end_color."""
         # Extract RGB components of the colors
-        start_rgb = self.hex_to_rgb(start_color)
-        end_rgb = self.hex_to_rgb(end_color)
+        def hex_to_rgb(hex_color):
+            """Convert a hex color to RGB."""
+            hex_color = hex_color.lstrip("#")
+            return tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+
+        def rgb_to_hex(r, g, b):
+            """Convert RGB values to hex color."""
+            return f"#{r:02x}{g:02x}{b:02x}"
+
+
+        start_rgb = hex_to_rgb(start_color)
+        end_rgb = hex_to_rgb(end_color)
 
         # Calculate the step sizes for each color component (R, G, B)
         r_step = (end_rgb[0] - start_rgb[0]) / steps
@@ -134,7 +139,7 @@ class RecordButton(ctk.CTkFrame):
             r = int(start_rgb[0] + r_step * step)
             g = int(start_rgb[1] + g_step * step)
             b = int(start_rgb[2] + b_step * step)
-            new_color = self.rgb_to_hex(r, g, b)
+            new_color = rgb_to_hex(r, g, b)
             widget.configure(fg_color=new_color)
 
             # Continue updating until we reach the final color
@@ -144,12 +149,5 @@ class RecordButton(ctk.CTkFrame):
         # Start the color transition
         update_color(0)
 
-    def hex_to_rgb(self, hex_color):
-        """Convert a hex color to RGB."""
-        hex_color = hex_color.lstrip("#")
-        return tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
 
-    def rgb_to_hex(self, r, g, b):
-        """Convert RGB values to hex color."""
-        return f"#{r:02x}{g:02x}{b:02x}"
 

@@ -6,7 +6,7 @@ from .SettingsMenu import SettingsMenu
 
 
 class TitleBar(ctk.CTkFrame):
-    def __init__(self, master, open_settings_callback):
+    def __init__(self, master):
         super().__init__(master)
         self.is_max = False
         self._x = self._y = None
@@ -39,12 +39,17 @@ class TitleBar(ctk.CTkFrame):
         self.min_image = ctk.CTkImage(self.min_image, size=(10, 10))
         self.max_image = ctk.CTkImage(self.max_image, size=(10, 10))
 
+
+        # To enable settings button and/or maximize-minimize button delete the quotes
+        """
         self.maxmin_button = ctk.CTkButton(self.title_bar, text="",
                                            image=self.max_image, width=30, fg_color="transparent", command=self.toggle_maximize)
         self.maxmin_button.pack(side="right", padx=2)
+        
 
         self.settings_btn = ctk.CTkButton(self.title_bar, text="⚙", command=open_settings_callback, width=30, fg_color="transparent")
         self.settings_btn.pack(side="right", padx=2)
+        """
 
 
 
