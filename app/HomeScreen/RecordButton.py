@@ -3,6 +3,9 @@ import customtkinter as ctk
 import sounddevice as sd
 from PIL import Image
 from app import utils
+import speech_recognition as sr
+import wavio as wv
+from scipy.io.wavfile import write
 
 class RecordButton(ctk.CTkFrame):
     def __init__(self, master):
@@ -14,16 +17,8 @@ class RecordButton(ctk.CTkFrame):
         record_btn_y = 80
 
 
-        self.record_btn = ctk.CTkButton(
-            self.master,
-            text="",
-            hover=False,
-            corner_radius=60,
-            fg_color=utils.idle_color,
-            #font=ctk.CTkFont(size=18),
-            width=120,
-            height=120,
-        )
+        self.record_btn = ctk.CTkButton(self.master, text="", hover=False, corner_radius=60,
+                                        fg_color=utils.idle_color, width=120, height=120)
         self.record_btn.place(x=record_btn_x, y=record_btn_y)
 
 
@@ -33,7 +28,8 @@ class RecordButton(ctk.CTkFrame):
 
         self.ctk_image = ctk.CTkImage(self.white_circle_image,size=(80, 80))
 
-        self.white_circle_label = ctk.CTkLabel(self.master, fg_color=utils.idle_color, bg_color="transparent", image=self.ctk_image, text="")
+        self.white_circle_label = ctk.CTkLabel(self.master, fg_color=utils.idle_color, bg_color="transparent",
+                                               image=self.ctk_image, text="")
         self.white_circle_label.place(x=record_btn_x+20, y=record_btn_y+20)
 
 
@@ -67,7 +63,6 @@ class RecordButton(ctk.CTkFrame):
     def stop_recording(self):
         def stop_recording():
             self.recording = False
-            print("ended")
         if self.recording:
             self.smooth_color_transition(self.record_btn, utils.active_color, utils.idle_color)
             self.smooth_color_transition(self.white_circle_label, utils.active_color, utils.idle_color)
@@ -88,30 +83,45 @@ class RecordButton(ctk.CTkFrame):
             threading.Thread(target=self.record_audio).start()
 
 
-
     def record_audio(self):
 
-        while self.recording:
-            print("starting new stream")
-            audio = sd.rec(
-                int(utils.DURATION * utils.FREQUENCY),
-                samplerate=utils.FREQUENCY,
-                channels=2,
-                dtype='int16'
-            )
-            sd.wait()
-            self.temp_callback(audio)
-
+        print("starting new stream")
+        audio = sd.rec(
+            int(utils.DURATION * utils.FREQUENCY),
+            samplerate=utils.FREQUENCY,
+            channels=2,
+            dtype='int16'
+        )
+        sd.wait()
+        self.stop_recording()
+        wv.write("recording1.wav", audio, utils.FREQUENCY, sampwidth=2)
+        self.temp_callback(audio)
 
     def temp_callback(self, audio):
-        print("inside")
+        print("in")
+        recognizer = sr.Recognizer()
+        try:
+            # Convert NumPy audio array to audio data
+            audio_data = sr.AudioData(audio.tobytes(), utils.FREQUENCY, 2)
+            text = recognizer.recognize_google(audio_data)
+            print("You said:", text)
+
+            self.process_command(text)
+            # Now `text` is a string version of your voice command
+            # You can pass it to a classifier or do anything with it
+            # For example, classify_command(text)
+
+        except sr.UnknownValueError:
+            print("Could not understand audio.")
+        except sr.RequestError as e:
+            print("Recognition error:", e)
         # MAIN CALLBACK FOR TEXT: this function here
         # will call and give the recorded audio sample to the machine learning model for translation
         # look at utils.DURATION for the duration of each interval
 
-
-
-
+    def process_command(self, command):
+        # Just print the recognized text as a string
+        print(f"Recognized command: '{command}'")
 
     def smooth_color_transition(self, widget, start_color, end_color, steps=20, delay=20):
         """Smoothly transition the color of the widget from start_color to end_color."""

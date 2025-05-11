@@ -1,8 +1,7 @@
 import threading
 import customtkinter as ctk
-from PIL import Image
 from pynput import mouse, keyboard
-from app import TitleBar, HomeView, SettingsMenu, utils
+from app import TitleBar, HomeView, utils
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -12,16 +11,14 @@ class VICS(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.overrideredirect(True)
-        self._y = None
-        self._x = None
-        self.withdrawn = False
-        self.theme = False
-        self.geometry(utils.DIMENSIONS)
-        utils.center_window(self, utils.WIDTH, utils.HEIGHT)
         self.resizable(True, True)
+        self.geometry(utils.DIMENSIONS)
 
-        #self.settings = SettingsMenu(self)
-        #self.settings.place(x=self.winfo_width(), y=0, relheight=1)
+        self._y = self._x =None
+        self.withdrawn = self.theme = False
+        self.focus_in = True
+
+        utils.center_window(self, utils.WIDTH, utils.HEIGHT)
 
         self.temp_frame = ctk.CTkFrame(self)
         self.temp_frame.pack(fill="x", side="top")
@@ -29,16 +26,13 @@ class VICS(ctk.CTk):
         self.custom_title_bar = TitleBar(self.temp_frame)
         self.custom_title_bar.pack(fill="x", side="top")
 
-
-        self.content_frame = ctk.CTkFrame(self)  # New frame just for screen assets
+        self.content_frame = ctk.CTkFrame(self)
         self.content_frame.pack(fill="both", expand=True, side="left")
 
         self.home_screen = HomeView(self.content_frame)
         self.home_screen.pack(fill="x", side="top")
 
-
         self.active_frame = self.show_instance(self.content_frame)
-        self.focus_in = True
 
         self.cmb = utils.keyboard_shortcut
         self.current = set()
@@ -88,59 +82,6 @@ class VICS(ctk.CTk):
                 self.withdraw()
                 self.focus_in = False
 
-
-
-
-
-
-
-
-# Placeholder for your ML prediction function
-def predict_from_audio(file_path):
-    if "1" in file_path:
-        return "One"
-    return "Unknown"
-
-# Main app
-
-"""""
-app = ctk.CTk()
-app.title("Voice Recognition")
-app.geometry("400x250")
-
-selected_file_path = ctk.StringVar()
-prediction_result = ctk.StringVar(value="Prediction: None")
-
-def load_audio():
-    file_path = fd.askopenfilename(
-        title="Select Audio File",
-        filetypes=[("WAV files", "*.wav")]
-    )
-    if file_path:
-        selected_file_path.set(file_path)
-        prediction_result.set("Prediction: Ready to run")
-
-def run_prediction():
-    path = selected_file_path.get()
-    if not os.path.exists(path):
-        prediction_result.set("Error: No file selected")
-        return
-    result = predict_from_audio(path)
-    prediction_result.set(f"Prediction: {result}")
-
-# Widgets
-title = ctk.CTkLabel(app, text="Voice Recognition App", font=ctk.CTkFont(size=18, weight="bold"))
-title.pack(pady=10)
-
-load_btn = ctk.CTkButton(app, text="Load Audio File", command=load_audio)
-load_btn.pack(pady=10)
-
-predict_btn = ctk.CTkButton(app, text="Run Prediction", command=run_prediction)
-predict_btn.pack(pady=10)
-
-result_label = ctk.CTkLabel(app, textvariable=prediction_result, font=ctk.CTkFont(size=14))
-result_label.pack(pady=20)
-"""""
 
 if __name__ == "__main__":
     app = VICS()
