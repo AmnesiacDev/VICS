@@ -5,8 +5,8 @@ WIDTH = 400
 HEIGHT = 300
 TITLE = "VICS"
 FILENAME = "assets/recorded.wav"
-DURATION = 3
-SAMPLE_RATE = 16000
+DURATION = 5
+SAMPLE_RATE = 44100
 FREQUENCY = 44100
 
 keyboard_shortcut = [{keyboard.Key.shift, keyboard.Key.f1}]
