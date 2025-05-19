@@ -1,17 +1,21 @@
 import threading
 import customtkinter as ctk
+import numpy as np
 import sounddevice as sd
 from PIL import Image
 from app import utils
-import speech_recognition as sr
-import wavio as wv
-from scipy.io.wavfile import write
+import app.Machine.Transcribe as tr
+import queue
 
 class RecordButton(ctk.CTkFrame):
-    def __init__(self, master):
-        super().__init__(master)
+    def __init__(self, master, text_box, **kwargs):
+        super().__init__(master, **kwargs)
+        self.recorded_frames = None
+        self.started_recording = None
+        self.stop_flag = None
         print("in record")
         self.recording = None
+        self.text_box = text_box
 
         record_btn_x = 140
         record_btn_y = 80
@@ -20,7 +24,6 @@ class RecordButton(ctk.CTkFrame):
         self.record_btn = ctk.CTkButton(self.master, text="", hover=False, corner_radius=60,
                                         fg_color=utils.idle_color, width=120, height=120)
         self.record_btn.place(x=record_btn_x, y=record_btn_y)
-
 
 
         self.white_circle_image = Image.open(utils.white_circle)
@@ -63,10 +66,19 @@ class RecordButton(ctk.CTkFrame):
     def stop_recording(self):
         def stop_recording():
             self.recording = False
+
+            audio_data = np.concatenate(self.recorded_frames, axis=0)
+            self.temp_callback(audio_data)
+
         if self.recording:
+            self.text_box.new_text("Transcribing....")
+            self.stop_flag.set()
+            self.started_recording.join()
+
             self.smooth_color_transition(self.record_btn, utils.active_color, utils.idle_color)
             self.smooth_color_transition(self.white_circle_label, utils.active_color, utils.idle_color)
-            self.after(100, stop_recording)
+            self.after(450, stop_recording)
+
 
     def start_recording(self, event):
         if self.recording:
@@ -74,50 +86,44 @@ class RecordButton(ctk.CTkFrame):
         else:
             self.recording = True
 
+            self.text_box.new_text("recording...")
             self.record_btn.configure(fg_color=utils.active_color)
             self.white_circle_label.configure(fg_color=utils.active_color)
 
             self.smooth_color_transition(self.record_btn, utils.hover_color, utils.active_color)
             self.smooth_color_transition(self.white_circle_label, utils.hover_color, utils.active_color)
 
-            threading.Thread(target=self.record_audio).start()
+            self.stop_flag = threading.Event()
+            self.started_recording = threading.Thread(target=self.record_audio)
+            self.started_recording.start()
 
 
     def record_audio(self):
 
         print("starting new stream")
-        audio = sd.rec(
-            int(utils.DURATION * utils.FREQUENCY),
-            samplerate=utils.FREQUENCY,
-            channels=2,
-            dtype='int16'
-        )
-        sd.wait()
-        self.stop_recording()
-        wv.write("recording1.wav", audio, utils.FREQUENCY, sampwidth=2)
-        self.temp_callback(audio)
+        self.recorded_frames = []
+        audio_queue = queue.Queue()
+
+        def callback(indata, frames, time, status):
+            if status:
+                print(status)
+            audio_queue.put(indata.copy())
+
+        with sd.InputStream(samplerate=utils.FREQUENCY, channels=2,dtype='int16',callback=callback):
+
+            while not self.stop_flag.is_set():
+                try:
+                    data = audio_queue.get(timeout=0.1)
+                    self.recorded_frames.append(data)
+                except queue.Empty:
+                    continue
+
+
 
     def temp_callback(self, audio):
-        print("in")
-        recognizer = sr.Recognizer()
-        try:
-            # Convert NumPy audio array to audio data
-            audio_data = sr.AudioData(audio.tobytes(), utils.FREQUENCY, 2)
-            text = recognizer.recognize_google(audio_data)
-            print("You said:", text)
+        self.text_box.new_text(tr.transcribe_audio(audio, utils.FREQUENCY))
 
-            self.process_command(text)
-            # Now `text` is a string version of your voice command
-            # You can pass it to a classifier or do anything with it
-            # For example, classify_command(text)
 
-        except sr.UnknownValueError:
-            print("Could not understand audio.")
-        except sr.RequestError as e:
-            print("Recognition error:", e)
-        # MAIN CALLBACK FOR TEXT: this function here
-        # will call and give the recorded audio sample to the machine learning model for translation
-        # look at utils.DURATION for the duration of each interval
 
     def process_command(self, command):
         # Just print the recognized text as a string

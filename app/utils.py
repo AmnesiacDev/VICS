@@ -1,13 +1,22 @@
+from matplotlib import font_manager
 from pynput import keyboard
+import ctypes
+import os
+import shutil
+import subprocess
 
 DIMENSIONS = "400x300"
 WIDTH = 400
-HEIGHT = 300
+HEIGHT = 500
 TITLE = "VICS"
 FILENAME = "assets/recorded.wav"
 DURATION = 3
 SAMPLE_RATE = 16000
 FREQUENCY = 44100
+PLACEHOLDER = "I am a placeholder..."
+
+melon_font_path = "assets/font/melon_camp/Melon Camp.otf"
+font_name = "Melon Camp"
 
 keyboard_shortcut = [{keyboard.Key.shift, keyboard.Key.f1}]
 
@@ -30,6 +39,7 @@ dark_hover = "#1c1c1c"
 light_hover = "#aba7a7"
 
 
+
 def center_window(self, width, height):
     screen_width = self.winfo_screenwidth()
     screen_height = self.winfo_screenheight()
@@ -39,3 +49,38 @@ def center_window(self, width, height):
 
     self.geometry(f"{width}x{height}+{x}+{y}")
 
+
+def windows_install_font(font_path):
+    if not is_font_installed():
+        FR_PRIVATE = 0x10
+        if os.path.exists(font_path):
+            result = ctypes.windll.gdi32.AddFontResourceExW(font_path, FR_PRIVATE, 0)
+            ctypes.windll.user32.SendMessageW(0xFFFF, 0x001D, 0, 0)  # Broadcast font change
+            return result > 0
+        return False
+    else:
+        print("font already exists")
+
+
+def linux_user_install_font(font_path):
+    if not is_font_installed():
+        font_dir = os.path.expanduser("~/.local/share/fonts/")
+        os.makedirs(font_dir, exist_ok=True)
+        dest_path = os.path.join(font_dir, font_name)
+        shutil.copy(font_path, dest_path)
+        subprocess.run(["fc-cache", "-f", "-v"], check=True)
+        return dest_path
+    else:
+        print("font already exists")
+
+
+def is_font_installed():
+    try:
+        for font in font_manager.findSystemFonts(fontpaths=None, fontext="otf"):
+            prop = font_manager.FontProperties(fname=font)
+            if prop.get_name().lower() == font_name.lower():
+                return True
+    except RuntimeError:
+        pass
+
+    return False

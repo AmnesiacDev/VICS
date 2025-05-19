@@ -2,6 +2,7 @@ import threading
 import customtkinter as ctk
 from pynput import mouse, keyboard
 from app import TitleBar, HomeView, utils
+import platform
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -10,9 +11,15 @@ class VICS(ctk.CTk):
 
     def __init__(self):
         super().__init__()
+
         self.overrideredirect(True)
         self.resizable(True, True)
         self.geometry(utils.DIMENSIONS)
+
+        if "Windows" in platform.system():
+            utils.windows_install_font(utils.melon_font_path)
+        elif "Linux" in platform.system():
+            utils.linux_user_install_font(utils.melon_font_path)
 
         self._y = self._x =None
         self.withdrawn = self.theme = False
@@ -36,6 +43,8 @@ class VICS(ctk.CTk):
 
         self.cmb = utils.keyboard_shortcut
         self.current = set()
+
+
 
         threading.Thread(target=self.keyboard_listener, daemon=True).start()
         mouse.Listener(on_click=self.mouse_listener).start()

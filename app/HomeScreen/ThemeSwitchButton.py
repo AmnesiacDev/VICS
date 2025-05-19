@@ -4,9 +4,10 @@ from app import utils
 
 
 class ThemeSwitch(ctk.CTkFrame):
-    def __init__(self, master):
-        super().__init__(master)
+    def __init__(self, master, text_box, **kwargs):
+        super().__init__(master, **kwargs)
         self.theme = False
+        self.text_box = text_box
 
         self.light_sun_image = Image.open(utils.light_sun)
         self.light_sun_image = self.light_sun_image.resize((30, 30))
@@ -38,8 +39,10 @@ class ThemeSwitch(ctk.CTkFrame):
         if self.theme:
             self.theme = False
             ctk.set_appearance_mode("dark")
+            self.text_box.dark_theme()
             self.theme_switch.configure(image=self.light_sun_image, fg_color=utils.dark_hover)
         else:
             self.theme = True
             ctk.set_appearance_mode("light")
+            self.text_box.light_theme()
             self.theme_switch.configure(image=self.dark_sun_image, fg_color=utils.light_hover)
