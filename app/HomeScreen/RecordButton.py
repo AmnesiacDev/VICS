@@ -5,7 +5,10 @@ import sounddevice as sd
 from PIL import Image
 from app import utils
 import app.Machine.Transcribe as tr
+import app.Machine.Associator as Associator
+import app.Machine.Controller as Controller
 import queue
+import wavio as wv
 
 class RecordButton(ctk.CTkFrame):
     def __init__(self, master, text_box, **kwargs):
@@ -13,9 +16,10 @@ class RecordButton(ctk.CTkFrame):
         self.recorded_frames = None
         self.started_recording = None
         self.stop_flag = None
-        print("in record")
         self.recording = None
         self.text_box = text_box
+
+
 
         record_btn_x = 140
         record_btn_y = 80
@@ -68,7 +72,10 @@ class RecordButton(ctk.CTkFrame):
             self.recording = False
 
             audio_data = np.concatenate(self.recorded_frames, axis=0)
-            self.temp_callback(audio_data)
+            transcribed_text = tr.transcribe_audio(audio_data, utils.FREQUENCY)
+            self.text_box.new_text(transcribed_text)
+            wv.write("temp.wav", audio_data, utils.FREQUENCY)
+            self.after(200, lambda: self.temp_callback(audio_data, transcribed_text))
 
         if self.recording:
             self.text_box.new_text("Transcribing....")
@@ -106,10 +113,10 @@ class RecordButton(ctk.CTkFrame):
 
         def callback(indata, frames, time, status):
             if status:
-                print(status)
+                print("status: ",status)
             audio_queue.put(indata.copy())
 
-        with sd.InputStream(samplerate=utils.FREQUENCY, channels=2,dtype='int16',callback=callback):
+        with sd.InputStream(samplerate=utils.FREQUENCY, channels=2,dtype='int16',callback=callback, blocksize=2048):
 
             while not self.stop_flag.is_set():
                 try:
@@ -120,14 +127,21 @@ class RecordButton(ctk.CTkFrame):
 
 
 
-    def temp_callback(self, audio):
-        self.text_box.new_text(tr.transcribe_audio(audio, utils.FREQUENCY))
+    def temp_callback(self, audio, query):
+        model = Associator.classify_text_command(query)
+        print("model: ", model)
+
+        text = self.text_box.get_text()
+        self.text_box.new_text(f"{text}\nRecognized command: '{model}'")
+        self.after(500, lambda :self.process_command(model, query))
 
 
 
-    def process_command(self, command):
-        # Just print the recognized text as a string
-        print(f"Recognized command: '{command}'")
+    def process_command(self, command, query):
+        controller = Controller.Command(query)
+        controller.run(command)
+
+
 
     def smooth_color_transition(self, widget, start_color, end_color, steps=20, delay=20):
         """Smoothly transition the color of the widget from start_color to end_color."""

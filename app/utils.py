@@ -38,6 +38,11 @@ blood_red = "#880808"
 dark_hover = "#1c1c1c"
 light_hover = "#aba7a7"
 
+WEATHER = "92617575565c4fb6b2434710252005"
+
+
+
+
 
 
 def center_window(self, width, height):

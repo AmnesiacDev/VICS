@@ -27,6 +27,9 @@ class TextBlock(ctk.CTkFrame):
     def dark_theme(self):
         self.text_box.configure(fg_color=utils.dark_hover, text_color="#FFFFFF")
 
+    def get_text(self):
+        return self.text_box.cget("text")
+
     def chunk_words(self, text, max_len=18):
         words = text.split()
         lines = []
