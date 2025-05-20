@@ -16,10 +16,10 @@ class VICS(ctk.CTk):
         self.resizable(True, True)
         self.geometry(utils.DIMENSIONS)
 
-        if "Windows" in platform.system():
-            utils.windows_install_font(utils.melon_font_path)
-        elif "Linux" in platform.system():
-            utils.linux_user_install_font(utils.melon_font_path)
+        #if "Windows" in platform.system():
+        #    utils.windows_install_font(utils.melon_font_path)
+        #elif "Linux" in platform.system():
+        #    utils.linux_user_install_font(utils.melon_font_path)
 
         self._y = self._x =None
         self.withdrawn = self.theme = False
